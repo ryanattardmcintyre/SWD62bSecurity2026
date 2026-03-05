@@ -1,5 +1,6 @@
 ﻿using Common.Models;
 using DataAccess.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Net;
@@ -26,26 +27,29 @@ namespace Presentation.Controllers
             return View(list);
         }
         [HttpGet]
+        [Authorize]
         public IActionResult Create()
         {
             return View();
         }
         [HttpPost]
         [ValidateAntiForgeryToken] //generate a server side nonce token and validate it with 
-                                    //the token that has to be generated on the client side as well
+                                   //the token that has to be generated on the client side as well
+        [Authorize]
         public IActionResult Create(Event e)
         {
+
+            if(!ModelState.IsValid) //if you forget this, there's a chance that if the attacker
+                                    //bypasses the page, then the validators you had on the page
+                                    //become useless, hence we need server side validation.
+            {
+                return View(e);
+            }
+
             //validate
             //sanitize
             e.Organiser = User.Identity.Name;
             e.FilePath = "";
-
-            string regex = "^[a-z][A-Z][0-9]*$";
-            if(!System.Text.RegularExpressions.Regex.IsMatch(e.Name, regex))
-            {
-                ModelState.AddModelError("Name", "Event name contains invalid characters.");
-                return View(e);
-            }
 
             if (e.Name.Contains("<") || e.Name.Contains(">"))
             {

@@ -9,6 +9,8 @@
     <form asp-action="Create" method="post" class="mt-3">
         @Html.AntiForgeryToken()
 
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+
         <div class="form-group mb-3">
             <label asp-for="Name" class="form-label"></label>
             <input asp-for="Name" class="form-control" />
