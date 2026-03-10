@@ -20,6 +20,7 @@ namespace Common.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         
         public int Id { get; set; }
+        
         [Required(AllowEmptyStrings = false, ErrorMessage ="Please input an event name")]
         [StringLength(100)]
         [RegularExpression(@"^[A-Za-z0-9 ]+$", ErrorMessage = "Event name can only contain letters, numbers, and spaces")]

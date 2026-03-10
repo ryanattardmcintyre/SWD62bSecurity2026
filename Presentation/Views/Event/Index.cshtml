@@ -22,13 +22,14 @@
                 <th>Price</th>
                 <th>Maximum Tickets</th>
                 <th>Image</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @if (Model == null || !Model.Any())
             {
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No events found.</td>
+                    <td colspan="8" class="text-center text-muted">No events found.</td>
                 </tr>
             }
             else
@@ -49,6 +50,9 @@
                             {
                                 <span class="text-muted">No image</span>
                             }
+                        </td>
+                        <td>
+                            <a href="/tickets/buy/@item.Id" class="btn btn-warning">Buy</a>
                         </td>
                     </tr>
                 }
