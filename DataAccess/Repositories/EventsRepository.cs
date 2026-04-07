@@ -1,6 +1,8 @@
 ﻿using Common.Models;
 using DataAccess.Context;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +14,28 @@ namespace DataAccess.Repositories
     public class EventsRepository
     {
         private readonly TicketContext _context;
-        public EventsRepository(TicketContext context) {
+        private readonly IConfiguration _configuration;
+        public EventsRepository(TicketContext context, IConfiguration configuration) {
             _context = context;
+            _configuration = configuration;
         }
 
+
+        //this is a method which we must ensure it is run by the lesser privileged db login!
+        //this ensures that if an sqli attack is successful,
+        //the damage is limited as the attacker will be using a lesser privileged login where Delete or Create are denied
         public IQueryable<Event> GetAllEvents() {
+   
+            string connectionString = _configuration.GetConnectionString("UserConnection");
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                _context.Database.SetConnectionString(connectionString);
+            }
+
+            //querying or any command which is run on the database after this line, will be running
+            //with least privilege login credentials,
+            //which is a good security practice to limit the damage of an sqli attack
+
             return _context.Events;
         }
 

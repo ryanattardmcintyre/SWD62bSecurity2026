@@ -13,6 +13,7 @@ namespace Presentation.Controllers
             _logger = logger;
         }
 
+        
         public IActionResult Index()
         {
             return View();
@@ -28,5 +29,7 @@ namespace Presentation.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+         
     }
 }
