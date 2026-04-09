@@ -27,7 +27,7 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     options.Password.RequireDigit = true;
 }
 ).AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<TicketContext>().AddDefaultUI();
+    .AddEntityFrameworkStores<TicketContext>().AddDefaultTokenProviders().AddDefaultUI();
 builder.Services.AddControllersWithViews();
 
 // Register Razor Pages services for Identity UI (fix)
@@ -48,7 +48,7 @@ builder.Services.AddScoped<DataAccess.Repositories.EventsRepository>();
 var app = builder.Build();
 
 // Create a scope to resolve scoped services (example - commented out)
-/*using (var scope = app.Services.CreateScope())
+using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider
         .GetRequiredService<RoleManager<IdentityRole>>();
@@ -60,7 +60,7 @@ var app = builder.Build();
         new RolesManagementHelper(roleManager, userManager);
 
     rolesManagementHelper.DefaultRolesSetup();
-}*/
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

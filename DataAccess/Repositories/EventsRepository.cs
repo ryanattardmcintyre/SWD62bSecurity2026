@@ -69,5 +69,22 @@ namespace DataAccess.Repositories
                  });
              }
          }*/
+
+
+        public void DeleteEvent(int id) {
+
+            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                _context.Database.SetConnectionString(connectionString);
+            }
+
+            var eventToDelete = _context.Events.Find(id);
+            if (eventToDelete != null)
+            {
+                _context.Events.Remove(eventToDelete);
+                _context.SaveChanges();
+            }
+        }   
     }
 }

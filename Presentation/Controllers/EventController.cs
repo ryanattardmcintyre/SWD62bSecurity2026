@@ -3,6 +3,7 @@ using DataAccess.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Presentation.ActionFilters;
 using System.Net;
 using System.Xml;
 
@@ -168,6 +169,18 @@ namespace Presentation.Controllers
 
             _eventsRepository.CreateEvent(e);
             TempData["success"] = "Event created successfully!";
+            return RedirectToAction("Index");
+        }
+
+
+        [Authorize(Roles = "organizer")] //distinguish between an authenticated user and not
+        //in case you need to verify whether user who is an organizer is actually the organizer
+        //of the event about to be deleted => we have to use and apply an Authorization Filter
+        [HasEventOrganizerPermission]
+        public IActionResult Delete(int id)
+        {
+            _eventsRepository.DeleteEvent(id);
+            TempData["success"] = "Event deleted successfully!";
             return RedirectToAction("Index");
         }
     }
