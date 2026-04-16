@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication.Google;
 using DataAccess.Context;
 using Microsoft.Build.Framework;
 using Presentation.Helpers;
+using Serilog;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +47,27 @@ builder.Services.AddAuthentication()
 // Register repository using DI so TicketContext and IConfiguration are resolved automatically
 builder.Services.AddScoped<DataAccess.Repositories.EventsRepository>();
 
+
+//Logs => files / cloud
+//        reason not to log in a database: 
+//        1- performance: logging in a database can be slower than logging in a file, especially if the database is on a different server or if there are a lot of logs to write.     
+//        2- complexity: if the database fails or unavailable or no more space is left, logs will start failing with every line
+                       // we're using logs as part of error handling
+        //3- costs: database space costs more than storage for logs space
+
+
+
+var myLogConfiguration = new LoggerConfiguration()
+    .MinimumLevel.Warning() //=> Warning + Errors + Critical
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.ConfigureLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddSerilog(myLogConfiguration, dispose: true);
+});
+
 var app = builder.Build();
 
 // Create a scope to resolve scoped services (example - commented out)
@@ -61,6 +84,12 @@ using (var scope = app.Services.CreateScope())
 
     rolesManagementHelper.DefaultRolesSetup();
 }
+
+//this will catch any unhandled exceptions and user is redirected to the error page with the error details
+//ReExecute => Server transfer
+//Redirect => Client transfer //in case you want to log where it happened 
+app.UseStatusCodePagesWithReExecute("/Home/StatusError", "?code={0}");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

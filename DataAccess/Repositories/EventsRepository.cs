@@ -1,4 +1,5 @@
-﻿using Common.Models;
+﻿using Common.CustomExceptions;
+using Common.Models;
 using DataAccess.Context;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,11 @@ namespace DataAccess.Repositories
         }
 
         public void CreateEvent(Event newEvent) {
-            
+            if(GetAllEvents().Any(e=>e.Name == newEvent.Name))
+            {
+                throw new CreateEventException();
+            }
+             string connectionString = _configuration.GetConnectionString("AdminConnection");
             _context.Events.Add(newEvent);
             _context.SaveChanges();
         }
@@ -85,6 +90,8 @@ namespace DataAccess.Repositories
                 _context.Events.Remove(eventToDelete);
                 _context.SaveChanges();
             }
+            
+
         }   
     }
 }

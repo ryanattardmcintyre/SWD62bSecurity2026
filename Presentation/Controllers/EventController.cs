@@ -1,4 +1,5 @@
-﻿using Common.Models;
+﻿using Common.CustomExceptions;
+using Common.Models;
 using DataAccess.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,61 +41,63 @@ namespace Presentation.Controllers
         [Authorize]
         public IActionResult Create(Event e, IFormFile file, [FromServices] IWebHostEnvironment host)
         {
-            e.FilePath = "";
-            if (file != null)
+            try
             {
-                //validation for file
-
-                //#1
-                if(file.Length > 5 * 1024 * 1024) // Limit file size to 5MB
+                e.FilePath = "";
+                if (file != null)
                 {
-                    ModelState.AddModelError("File", "File size cannot exceed 5MB.");
-                    return View(e);
-                }
+                    //validation for file
 
-                //#2
-                string[] whitelistOfFileExtensions = new[] { ".jpg", ".jpeg", ".png" };
-
-                bool failedCheck = false;
-                int counter = 0;
-                do
-                {
-                    if(Path.GetExtension(file.FileName).ToLower() == whitelistOfFileExtensions[counter])
+                    //#1
+                    if (file.Length > 5 * 1024 * 1024) // Limit file size to 5MB
                     {
-                        failedCheck = false;
-                        break;
-                    }
-                    else
-                    {
-                        failedCheck = true;
+                        ModelState.AddModelError("File", "File size cannot exceed 5MB.");
+                        return View(e);
                     }
 
-                    counter++;
+                    //#2
+                    string[] whitelistOfFileExtensions = new[] { ".jpg", ".jpeg", ".png" };
 
-                } while (failedCheck == true && counter < whitelistOfFileExtensions.Length);
+                    bool failedCheck = false;
+                    int counter = 0;
+                    do
+                    {
+                        if (Path.GetExtension(file.FileName).ToLower() == whitelistOfFileExtensions[counter])
+                        {
+                            failedCheck = false;
+                            break;
+                        }
+                        else
+                        {
+                            failedCheck = true;
+                        }
 
-                if(failedCheck == true)
-                {
-                    ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed.");
-                    return View(e);
-                }
+                        counter++;
 
-                //# 3 - checking the file signature
-                byte[] jpgFileSignature = new byte[] {255, 216 }; //FF D8	
-                byte[] pngFileSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }; //89 50 4E 47 0D 0A 1A 0A
+                    } while (failedCheck == true && counter < whitelistOfFileExtensions.Length);
 
-                bool jpgSignatureMatch = true;
-                bool pngSignatureMatch = true;
+                    if (failedCheck == true)
+                    {
+                        ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed.");
+                        return View(e);
+                    }
 
-                using (var fileStream = file.OpenReadStream())
-                {
+                    //# 3 - checking the file signature
+                    byte[] jpgFileSignature = new byte[] { 255, 216 }; //FF D8	
+                    byte[] pngFileSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }; //89 50 4E 47 0D 0A 1A 0A
+
+                    bool jpgSignatureMatch = true;
+                    bool pngSignatureMatch = true;
+
+                    using (var fileStream = file.OpenReadStream())
+                    {
                         byte[] fileSignature = new byte[jpgFileSignature.Length];
                         fileStream.Read(fileSignature, 0, fileSignature.Length);
-    
-                        if (!fileSignature.SequenceEqual(jpgFileSignature) 
+
+                        if (!fileSignature.SequenceEqual(jpgFileSignature)
                         )
                         {
-                           jpgSignatureMatch = false;
+                            jpgSignatureMatch = false;
                         }
 
                         fileStream.Position = 0; //resetting position to 0
@@ -105,70 +108,84 @@ namespace Presentation.Controllers
                         if (!fileSignature2.SequenceEqual(pngFileSignature)
                         )
                         {
-                        pngSignatureMatch = false;
+                            pngSignatureMatch = false;
                         }
+                    }
+
+                    if (jpgSignatureMatch == false && pngSignatureMatch == false)
+                    {
+                        ModelState.AddModelError("File", "The file signature does not match the expected format for .jpg or .png files.");
+                        return View(e);
+                    }
+
+                    string uploadsFolder = "";
+                    if (e.Public == true)
+                    {
+                        //this saves in wwwroot = public
+                        uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
+                    }
+                    else
+                    {
+                        //this saves outside the wwwroot/uploads = private
+                        uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
+                    }
+
+                    Directory.CreateDirectory(uploadsFolder); // Ensure the uploads folder exists
+
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                    e.FilePath = "/uploads/" + uniqueFileName; // Store the relative path to the file
                 }
 
-                if(jpgSignatureMatch == false && pngSignatureMatch == false)
+                e.Organiser = User.Identity.Name;
+
+
+                //exclude the filepath and the organizer from the validated properties 
+                //since we're taking care of the assignment of their values manually here in this action
+                ModelState.Remove("FilePath");
+                ModelState.Remove("Organiser");
+
+
+                if (!ModelState.IsValid) //if you forget this, there's a chance that if the attacker
+                                         //bypasses the page, then the validators you had on the page
+                                         //become useless, hence we need server side validation.
                 {
-                    ModelState.AddModelError("File", "The file signature does not match the expected format for .jpg or .png files.");
                     return View(e);
                 }
 
-                string uploadsFolder = "";
-                if(e.Public== true)
+                //validate
+                //sanitize
+
+
+
+                if (e.Name.Contains("<") || e.Name.Contains(">"))
                 {
-                    //this saves in wwwroot = public
-                     uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
-                }
-                else
-                {
-                    //this saves outside the wwwroot/uploads = private
-                    uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
+                    ModelState.AddModelError("Name", "Event name cannot contain HTML tags.");
+                    return View(e);
                 }
 
-                Directory.CreateDirectory(uploadsFolder); // Ensure the uploads folder exists
+                e.Name = WebUtility.HtmlEncode(e.Name);
 
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    file.CopyTo(fileStream);
-                }
-                e.FilePath = "/uploads/" + uniqueFileName; // Store the relative path to the file
+                _eventsRepository.CreateEvent(e);
+                TempData["success"] = "Event created successfully!";
             }
-
-            e.Organiser = User.Identity.Name;
-
-
-            //exclude the filepath and the organizer from the validated properties 
-            //since we're taking care of the assignment of their values manually here in this action
-            ModelState.Remove("FilePath");
-            ModelState.Remove("Organiser");
-
-
-            if (!ModelState.IsValid) //if you forget this, there's a chance that if the attacker
-                                    //bypasses the page, then the validators you had on the page
-                                    //become useless, hence we need server side validation.
+            catch (CreateEventException ex)
             {
+                ModelState.AddModelError("Name", ex.Message);
                 return View(e);
             }
-
-            //validate
-            //sanitize
-            
-            
-
-            if (e.Name.Contains("<") || e.Name.Contains(">"))
+            catch(Exception ex)
             {
-                ModelState.AddModelError("Name", "Event name cannot contain HTML tags.");
+                // log the exception
+
+                // inform the user
+                ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
                 return View(e);
             }
-
-            e.Name = WebUtility.HtmlEncode(e.Name);
-
-            _eventsRepository.CreateEvent(e);
-            TempData["success"] = "Event created successfully!";
             return RedirectToAction("Index");
         }
 
