@@ -1,4 +1,5 @@
 ﻿using Common.Models;
+using DataAccess.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models;
 
@@ -23,15 +24,24 @@ namespace Presentation.Controllers
         }
 
         [HttpPost]
-        public IActionResult Buy(CreateTicketViewModel data)
+        public IActionResult Buy(CreateTicketViewModel data, [FromServices] EventsRepository eventsRepository)
         {
-            if(ModelState.IsValid == false)
+           /* if(ModelState.IsValid == false)
             {
                 return View(data);
-            }
+            }*/
             //save the ticket to the database
 
-            Ticket ticket = new Ticket
+            Ticket ticket1 = new Ticket
+            {
+                EventFK = data.EventFK,
+                Name = data.Name,
+                Surname = data.Surname,
+                IdCard = data.IdCard,
+                Quantity = data.ValidatedQty,
+                Status = Status.Paid
+            };
+            Ticket ticket2 = new Ticket
             {
                 EventFK = data.EventFK,
                 Name = data.Name,
@@ -42,6 +52,7 @@ namespace Presentation.Controllers
             };
 
             //add to the database....
+            eventsRepository.Checkout(new List<Ticket> { ticket1, ticket2 }, data.EventFK);
 
             return View();
         }

@@ -27,12 +27,12 @@ namespace DataAccess.Repositories
         //the damage is limited as the attacker will be using a lesser privileged login where Delete or Create are denied
         public IQueryable<Event> GetAllEvents() {
    
-            string connectionString = _configuration.GetConnectionString("UserConnection");
+          /*  string connectionString = _configuration.GetConnectionString("UserConnection");
             if (!string.IsNullOrEmpty(connectionString))
             {
                 _context.Database.SetConnectionString(connectionString);
             }
-
+            _context.Database.CloseConnection();*/
             //querying or any command which is run on the database after this line, will be running
             //with least privilege login credentials,
             //which is a good security practice to limit the damage of an sqli attack
@@ -92,6 +92,31 @@ namespace DataAccess.Repositories
             }
             
 
-        }   
+        }
+
+        public void Checkout(List<Ticket> tickets, int eventId)
+        {
+            var transaction = _context.Database.BeginTransaction();
+
+            try
+            {
+                var e = GetAllEvents().FirstOrDefault(e => e.Id == eventId);
+                if (e.MaximumTickets >= tickets.Sum(t => t.Quantity))
+                {
+                    foreach (var t in tickets)
+                    {
+                        //do some validation
+                        _context.Tickets.Add(t);
+                    }
+                }
+                _context.SaveChanges();
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw ex;
+            }
+        }
     }
 }
