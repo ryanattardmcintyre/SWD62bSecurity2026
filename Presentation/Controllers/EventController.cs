@@ -13,12 +13,13 @@ namespace Presentation.Controllers
     public class EventController : Controller
     {
         private EventsRepository _eventsRepository;
-        public EventController(EventsRepository eventsRepository) {
-         _eventsRepository = eventsRepository;
+        public EventController(EventsRepository eventsRepository)
+        {
+            _eventsRepository = eventsRepository;
         }
         public IActionResult Index()
         {
-            var list = _eventsRepository.GetAllEvents().Where(e => e.Public == true).Select(e=> new Event
+            var list = _eventsRepository.GetAllEvents().Where(e => e.Public == true).Select(e => new Event
             {
                 Id = e.Id,
                 Name = e.Name,
@@ -178,7 +179,7 @@ namespace Presentation.Controllers
                 ModelState.AddModelError("Name", ex.Message);
                 return View(e);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // log the exception
 
@@ -199,6 +200,32 @@ namespace Presentation.Controllers
             _eventsRepository.DeleteEvent(id);
             TempData["success"] = "Event deleted successfully!";
             return RedirectToAction("Index");
+        }
+
+
+        public IActionResult Details(string id)
+        {
+            //OF3xFVyAf1Zp8tmDy/5cpg==
+            //OF3xFVyAf+1Zp8tmDy/5cg==
+            //OF3xFVyAf&Zp8tmDy/5cpg==
+
+            var myParams = Presentation.Helpers.SymmetricEncryptionHelper.GenerateSymmetricParameters(
+                System.Security.Cryptography.Aes.Create(),
+                "p@$$w0rd"
+            );
+            var decryptedId = 
+                Presentation.Helpers.SymmetricEncryptionHelper.Decrypt(
+                    id, myParams, System.Security.Cryptography.Aes.Create());
+
+
+            int decryptedIdAsInt = Convert.ToInt32(decryptedId);
+
+            var e = _eventsRepository.GetAllEvents().SingleOrDefault(x=> x.Id == decryptedIdAsInt);
+            if (e == null || e.Public == false)
+            {
+                return NotFound();
+            }
+            return View(e);
         }
     }
 }

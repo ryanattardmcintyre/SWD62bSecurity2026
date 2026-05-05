@@ -53,6 +53,17 @@
                         </td>
                         <td>
                             <a href="/tickets/buy/@item.Id" class="btn btn-warning">Buy</a>
+
+                            @{
+                              var myParams=  Presentation.Helpers.SymmetricEncryptionHelper.GenerateSymmetricParameters(
+                            System.Security.Cryptography.Aes.Create(),
+                            "p@$$w0rd"
+                            );
+                                var encryptedId = Presentation.Helpers.SymmetricEncryptionHelper.Encrypt(item.Id.ToString(),
+                                 myParams,System.Security.Cryptography.Aes.Create() );
+                            }
+
+                            <a href="/event/details?id=@encryptedId" class="btn btn-info">View Details</a>
                         </td>
                     </tr>
                 }
