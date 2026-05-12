@@ -6,6 +6,30 @@ namespace Presentation.Controllers
 {
     public class TestController : Controller
     {
+        public IActionResult TestAsymmetric()
+        {
+            string plainText = "Hello world";
+            var myKeys = AsymmetricEncryptionHelper.GenerateKeys();
+
+            var myCipherMs = HybridEncryptionHelper.EncryptData(
+                new MemoryStream(System.Text.Encoding.UTF8.GetBytes(plainText)),
+                myKeys.PublicKey);
+
+
+
+            string cipherText = AsymmetricEncryptionHelper.Encrypt(plainText, myKeys.PublicKey);
+
+            //-------------------------------------------------------------------
+
+            string decryptedText =
+                AsymmetricEncryptionHelper.Decrypt(cipherText, myKeys.PrivateKey);
+
+            return Content($"Plain Text: {plainText}\n" +
+                           $"Cipher Text: {cipherText}\n" +
+                           $"Decrypted Text: {decryptedText}");
+
+
+        }
 
         public IActionResult TestSymmetric()
         {
