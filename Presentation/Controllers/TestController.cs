@@ -6,6 +6,34 @@ namespace Presentation.Controllers
 {
     public class TestController : Controller
     {
+
+        public IActionResult TestDigitalSigning()
+        {
+            RSA myAlg = RSA.Create();
+            var myKeys = AsymmetricEncryptionHelper.GenerateKeys();
+            MemoryStream fileData = new MemoryStream();
+            string myFile = @"C:\Users\attar\source\repos\SWD62bSecurity2026\Presentation\file1.txt";
+            using (var fileStream = new FileStream(myFile, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.CopyTo(fileData);
+            }
+            fileData.Position = 0;
+            string signature = DigitalSigningHelper.SignData(fileData, myKeys.PrivateKey);
+
+            //-------------------------------------------------------
+
+            MemoryStream fileData2 = new MemoryStream();
+            using (var fileStream = new FileStream(myFile, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.CopyTo(fileData2);
+            }
+            fileData2.Position = 0;
+            bool isOriginal = DigitalSigningHelper.VerifySignature(fileData2, signature, myKeys.PublicKey);
+
+            return Content($"Is the original file intact? {isOriginal}");
+
+        }
+
         public IActionResult TestAsymmetric()
         {
             string plainText = "Hello world";
