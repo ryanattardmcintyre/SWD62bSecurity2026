@@ -7,6 +7,18 @@ namespace Presentation.Controllers
     public class TestController : Controller
     {
 
+        public IActionResult TestMockTest()
+        {
+           string cipher=
+                SymmetricEncryptionHelper.Decrypt("xslyhz/gjwoGk6zUizNFIQ==", new SymmetricParameters
+            {
+                Key = new byte[] { 229, 40, 188, 60, 221, 98, 193, 19, 22, 116, 225, 239, 224, 217, 11, 146, 36, 89, 20, 80, 216, 6, 98, 237, 28, 46, 89, 161, 88, 8, 253, 129 },
+                IV = new byte[] { 212, 197, 20, 130, 243, 43, 210, 203, 169, 193, 14, 101, 206, 98, 59, 92 }
+            }, Aes.Create());
+
+            return Content("done");
+        }
+
         public IActionResult TestDigitalSigning()
         {
             RSA myAlg = RSA.Create();

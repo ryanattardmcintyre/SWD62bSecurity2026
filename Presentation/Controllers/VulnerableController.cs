@@ -6,6 +6,27 @@ namespace Presentation.Controllers
 {
     public class VulnerableController : Controller
     {
+
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Login(string username, string password)
+        {
+            if(username == "admin" && password == "123")
+            {
+                return Content("Login successful");
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+
+
         public IActionResult Download(string file, IWebHostEnvironment host)
         {
             string absolutePath = host.ContentRootPath + "/temp-files/" + Path.GetFileName(file);

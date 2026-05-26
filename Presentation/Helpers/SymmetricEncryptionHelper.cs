@@ -60,6 +60,9 @@ namespace Presentation.Helpers
             alg.Key = keys.Key;
             alg.IV = keys.IV;
 
+            alg.Mode= CipherMode.ECB;
+            alg.Padding = PaddingMode.ANSIX923;
+
             MemoryStream msIn = new MemoryStream(plainTextBytes);
             MemoryStream msOut = new MemoryStream(); //cipher is going to be stored in there
 
@@ -80,6 +83,8 @@ namespace Presentation.Helpers
 
             alg.Key = keys.Key;
             alg.IV = keys.IV;
+            alg.Mode = CipherMode.ECB;
+            alg.Padding = PaddingMode.ANSIX923;
 
             MemoryStream msIn = new MemoryStream(cipherBytes);
             MemoryStream msOut = new MemoryStream(); //clear text is going to be stored in there
